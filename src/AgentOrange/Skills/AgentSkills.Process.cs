@@ -1,7 +1,7 @@
 using AgentOrange.Core.ProcessHandling;
 using System.ComponentModel;
 
-namespace AgentOrange
+namespace AgentOrange.Skills
 {
     sealed partial class AgentSkills
     {

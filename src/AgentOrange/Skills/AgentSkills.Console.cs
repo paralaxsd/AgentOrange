@@ -1,7 +1,7 @@
-using Spectre.Console;
 using System.ComponentModel;
+using Spectre.Console;
 
-namespace AgentOrange
+namespace AgentOrange.Skills
 {
     sealed partial class AgentSkills
     {

@@ -1,9 +1,9 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.Loader;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
-namespace AgentOrange;
+namespace AgentOrange.Skills;
 
 partial class AgentSkills
 {

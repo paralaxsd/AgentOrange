@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.AI;
 using System.ComponentModel;
 
-namespace AgentOrange;
+namespace AgentOrange.Skills;
 
 sealed partial class AgentSkills(IChatClient baseClient) : IDisposable
 {

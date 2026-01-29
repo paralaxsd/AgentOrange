@@ -1,10 +1,13 @@
 using AgentOrange.Core.Extensions;
 using AgentOrange.Core.ProcessHandling;
 using Microsoft.Extensions.AI;
+using Spectre.Console;
 using System.ComponentModel;
 using System.Reflection;
 using System.Text;
-using Spectre.Console;
+using AgentOrange.Skills;
+using AgentOrange.TokenUsage;
+
 // ReSharper disable AccessToDisposedClosure
 
 namespace AgentOrange;
@@ -17,6 +20,7 @@ sealed class AgentOrangeApp : IAsyncDisposable
     * ***************************************************************************************/
     readonly AgentChatConfig _config;
     readonly Google.GenAI.Client _googleClient;
+    readonly IAgentTokenUsageProvider _tokenUsageProvider;
     readonly List<ChatMessage> _history = [];
 
     /******************************************************************************************
@@ -26,9 +30,16 @@ sealed class AgentOrangeApp : IAsyncDisposable
     public AgentOrangeApp(AgentChatConfig config)
     {
         _config = config;
-        _googleClient = config.Provider == LlmProvider.Google
-            ? new Google.GenAI.Client(apiKey: config.ApiKey)
-            : throw new NotSupportedException($"Provider {config.Provider} not supported yet.");
+        if (config.Provider == LlmProvider.Google)
+        {
+            _googleClient = new(apiKey: config.ApiKey);
+            _tokenUsageProvider = new GoogleTokenUsageProvider(_googleClient, config.ModelName);
+        }
+        else
+        {
+            _googleClient = null!;
+            _tokenUsageProvider = new FallbackTokenUsageProvider();
+        }
     }
 
     /******************************************************************************************
@@ -66,7 +77,7 @@ sealed class AgentOrangeApp : IAsyncDisposable
                 continue;
             if (input.Equals("exit", StringComparison.OrdinalIgnoreCase))
                 break;
-            _history.Add(CreateUserMessageFrom(input));
+            _history.Add(await CreateUserMessageFromAsync(input));
 
             try
             {
@@ -129,27 +140,23 @@ sealed class AgentOrangeApp : IAsyncDisposable
         _history.Add(msg);
     }
 
-    ChatMessage CreateUserMessageFrom(string input)
-    {
-        var metaBlock = CreateMetaBlock();
-        var fullInput = $"{metaBlock}\n{input}";
 
+    async Task<ChatMessage> CreateUserMessageFromAsync(string input)
+    {
+        var metaBlock = await CreateMetaBlockAsync(input);
+        var fullInput = $"{metaBlock}\n{input}";
         return new(ChatRole.User, fullInput);
     }
 
-    string CreateMetaBlock()
+    async Task<string> CreateMetaBlockAsync(string input)
     {
         var timestamp = DateTime.Now.ToString("yyyy - MM - dd HH:mm(ddd)");
         var metaSeg = $"META: {timestamp}";
-        var lastAssistantMessage = _history.LastOrDefault(msg => msg.Role == ChatRole.Assistant);
-        var details = lastAssistantMessage?.Contents.OfType<UsageContent>().FirstOrDefault()?.Details;
-        var inputTokens = details?.InputTokenCount is { } inCount ? $"In: {inCount}" : null;
-        var outputTokens = details?.OutputTokenCount is { } outCount ? $"Out: {outCount}" : null;
-        var cachedTokens = details?.CachedInputTokenCount is { } cachedCount ? $"Cache: {cachedCount}" : null;
-        var reasoning = details?.ReasoningTokenCount is { } reasoningCount ? $"Reas.: {reasoningCount}" : null;
-        var totalTokens = details?.TotalTokenCount is { } tokenCount ? $"Total: {tokenCount}" : null;
-        IEnumerable<string?> segments = [metaSeg, inputTokens, outputTokens, cachedTokens, reasoning, totalTokens];
-
+        var usage = await _tokenUsageProvider.GetTokenUsageAsync(_history, input);
+        var inputTokens = usage.InputTokens is { } inCount ? $"In: {inCount}" : null;
+        var outputTokens = usage.OutputTokens is { } outCount ? $"Out: {outCount}" : null;
+        var totalTokens = usage.TotalTokens is { } tokenCount ? $"Total: {tokenCount}" : null;
+        IEnumerable<string?> segments = [metaSeg, inputTokens, outputTokens, totalTokens];
         return $"[{segments.ExceptDefault().JoinedBy(" | ")}]";
     }
 

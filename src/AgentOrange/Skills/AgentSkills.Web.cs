@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using Microsoft.Extensions.AI;
 
-namespace AgentOrange
+namespace AgentOrange.Skills
 {
     sealed partial class AgentSkills
     {
