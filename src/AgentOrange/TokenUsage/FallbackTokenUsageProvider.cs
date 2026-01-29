@@ -4,7 +4,7 @@ namespace AgentOrange.TokenUsage;
 
 sealed class FallbackTokenUsageProvider : IAgentTokenUsageProvider
 {
-    public Task<TokenUsageInfo> GetTokenUsageAsync(List<ChatMessage> history, string? userInput = null)
+    public Task<TokenUsageInfo> GetTokenUsageAsync(IList<ChatMessage> history, string? userInput = null)
     {
         var lastAssistant = history.LastOrDefault(m => m.Role == ChatRole.Assistant);
         var usage = lastAssistant?.Contents.OfType<UsageContent>().FirstOrDefault()?.Details;

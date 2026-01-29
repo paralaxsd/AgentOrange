@@ -5,7 +5,7 @@ namespace AgentOrange.TokenUsage;
 public interface IAgentTokenUsageProvider
 {
     Task<TokenUsageInfo> GetTokenUsageAsync(
-        List<ChatMessage> history, string? userInput = null);
+        IList<ChatMessage> history, string? userInput = null);
 }
 
 public sealed record TokenUsageInfo(

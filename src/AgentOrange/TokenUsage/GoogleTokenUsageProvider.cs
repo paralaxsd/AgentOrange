@@ -6,7 +6,8 @@ namespace AgentOrange.TokenUsage;
 
 sealed class GoogleTokenUsageProvider(Google.GenAI.Client googleClient, string modelName) : IAgentTokenUsageProvider
 {
-    public async Task<TokenUsageInfo> GetTokenUsageAsync(List<ChatMessage> history, string? userInput = null)
+    public async Task<TokenUsageInfo> GetTokenUsageAsync(
+        IList<ChatMessage> history, string? userInput = null)
     {
         var content =
             (from msg in history
