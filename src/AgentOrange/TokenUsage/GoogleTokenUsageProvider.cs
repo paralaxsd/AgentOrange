@@ -1,3 +1,5 @@
+using AgentOrange.Core.Extensions;
+using Google.GenAI.Types;
 using Microsoft.Extensions.AI;
 
 namespace AgentOrange.TokenUsage;
@@ -6,18 +8,16 @@ sealed class GoogleTokenUsageProvider(Google.GenAI.Client googleClient, string m
 {
     public async Task<TokenUsageInfo> GetTokenUsageAsync(List<ChatMessage> history, string? userInput = null)
     {
-        var content = new List<Google.GenAI.Types.Content>();
-        foreach (var msg in history)
-        {
-            var text = string.Join("\n", msg.Contents.OfType<TextContent>().Select(tc => tc.Text));
-            var role = msg.Role == ChatRole.Assistant ? "model" : msg.Role == ChatRole.System ? "system" : "user";
-            content.Add(new()
-            {
-                Role = role,
-                Parts = [new() { Text = text }]
-            });
-        }
-        if (!string.IsNullOrWhiteSpace(userInput))
+        var content =
+            (from msg in history
+             let text = msg.Contents.OfType<TextContent>().Select(tc => tc.Text).JoinedBy("\n")
+             let role = msg.Role == ChatRole.Assistant ? "model" : msg.Role == ChatRole.System ? "system" : "user"
+             select new Content()
+             {
+                 Role = role,
+                 Parts = [new() { Text = text }]
+             }).ToList();
+        if (userInput.HasContent)
         {
             content.Add(new()
             {
@@ -27,7 +27,7 @@ sealed class GoogleTokenUsageProvider(Google.GenAI.Client googleClient, string m
         }
 
         var result = await googleClient.Models.CountTokensAsync(modelName, content);
-        var total = (int?)result?.TotalTokens;
-        return new TokenUsageInfo(null, null, total);
+        var total = result?.TotalTokens;
+        return new(null, null, total);
     }
 }

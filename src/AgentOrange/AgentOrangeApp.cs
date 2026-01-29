@@ -1,46 +1,26 @@
 using AgentOrange.Core.Extensions;
 using AgentOrange.Core.ProcessHandling;
+using AgentOrange.Skills;
+using AgentOrange.TokenUsage;
 using Microsoft.Extensions.AI;
 using Spectre.Console;
 using System.ComponentModel;
 using System.Reflection;
 using System.Text;
-using AgentOrange.Skills;
-using AgentOrange.TokenUsage;
+using AgentOrange.ChatSession;
 
 // ReSharper disable AccessToDisposedClosure
 
 namespace AgentOrange;
 
-
-sealed class AgentOrangeApp : IAsyncDisposable
+sealed class AgentOrangeApp(AgentChatConfig config) : IAsyncDisposable
 {
     /******************************************************************************************
-    * FIELDS
-    * ***************************************************************************************/
-    readonly AgentChatConfig _config;
-    readonly Google.GenAI.Client _googleClient;
-    readonly IAgentTokenUsageProvider _tokenUsageProvider;
-    readonly List<ChatMessage> _history = [];
-
-    /******************************************************************************************
-     * STRUCTORS
+     * FIELDS
      * ***************************************************************************************/
-
-    public AgentOrangeApp(AgentChatConfig config)
-    {
-        _config = config;
-        if (config.Provider == LlmProvider.Google)
-        {
-            _googleClient = new(apiKey: config.ApiKey);
-            _tokenUsageProvider = new GoogleTokenUsageProvider(_googleClient, config.ModelName);
-        }
-        else
-        {
-            _googleClient = null!;
-            _tokenUsageProvider = new FallbackTokenUsageProvider();
-        }
-    }
+    readonly AgentChatConfig _config = config;
+    readonly List<ChatMessage> _history = [];
+    IAgentChatSession? _session;
 
     /******************************************************************************************
      * METHODS
@@ -50,10 +30,11 @@ sealed class AgentOrangeApp : IAsyncDisposable
         Console.WriteLine("AgentOrange 🍊 — Gemini Console Chat");
         Console.WriteLine("Tippe 'exit' zum Beenden.\n");
 
+        _session = await AgentChatSessionFactory.CreateSessionFromAsync(_config);
+
         await InitializeSystemPromptAsync();
 
-        // TODO: Provider-agnostische ChatClient-Initialisierung
-        using var baseClient = _googleClient.AsIChatClient(_config.ModelName);
+        var baseClient = _session.ChatClient;
         using var skills = new AgentSkills(baseClient);
         using var summarizerClient = baseClient.AsBuilder().Build();
         using var chatClient = baseClient.AsBuilder()
@@ -102,19 +83,23 @@ sealed class AgentOrangeApp : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        await _googleClient.DisposeAsync();
+        if (_session is not null)
+            await _session.DisposeAsync();
     }
 
     async Task InitializeSystemPromptAsync()
     {
-        var model = await _googleClient.Models.GetAsync(_config.ModelName);
+        if (_session is null)
+            throw new InvalidOperationException("Chat session not initialized");
 
-        var inputTokenLimit = model.InputTokenLimit ?? 8192;
-        var outputTokenLimit = model.OutputTokenLimit ?? 8192;
+        var modelInfo = await _session.GetModelInfoAsync();
+        var inputTokenLimit = modelInfo?.InputTokenLimit ?? 8192;
+        var outputTokenLimit = modelInfo?.OutputTokenLimit ?? 8192;
+        var displayName = modelInfo?.DisplayName ?? _config.ModelName;
         var systemPrompt =
             $"""
             Du bist ein professioneller KI-Assistent mit Fokus auf Softwareentwicklung, Teamarbeit und technische Kommunikation.
-            Dein Modell ist '{model.DisplayName}' mit einem Input-Token-Limit von {inputTokenLimit} und einem Output-Token-Limit von {outputTokenLimit}.
+            Dein Modell ist '{displayName}' mit einem Input-Token-Limit von {inputTokenLimit} und einem Output-Token-Limit von {outputTokenLimit}.
             Behalte bei jeder Antwort beide Limits im Blick und fasse dich bei langen Konversationen oder großen Kontexten möglichst prägnant, um Kontextverluste zu vermeiden.
             Nach jeder Antwort erhältst du einen Meta-Block mit aktueller Zeit und Usage-Details, die du für die Optimierung deiner nächsten Antwort nutzen sollst.
             Antworte stets hilfreich, präzise und auf Augenhöhe mit erfahrenen Entwickler:innen.
@@ -152,7 +137,8 @@ sealed class AgentOrangeApp : IAsyncDisposable
     {
         var timestamp = DateTime.Now.ToString("yyyy - MM - dd HH:mm(ddd)");
         var metaSeg = $"META: {timestamp}";
-        var usage = await _tokenUsageProvider.GetTokenUsageAsync(_history, input);
+        var usage = _session?.TokenUsageProvider is { } provider ? 
+            await (provider.GetTokenUsageAsync(_history, input)) : TokenUsageInfo.Empty;
         var inputTokens = usage.InputTokens is { } inCount ? $"In: {inCount}" : null;
         var outputTokens = usage.OutputTokens is { } outCount ? $"Out: {outCount}" : null;
         var totalTokens = usage.TotalTokens is { } tokenCount ? $"Total: {tokenCount}" : null;
