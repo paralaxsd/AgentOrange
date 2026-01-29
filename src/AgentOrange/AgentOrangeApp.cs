@@ -75,9 +75,7 @@ sealed class AgentOrangeApp(AgentChatConfig config) : IAsyncDisposable
                 Console.WriteLine();
             }
 
-            const int maxTurns = 20;
-            if (_history.Count > maxTurns * 2)
-                _history.RemoveRange(0, _history.Count - maxTurns * 2);
+            await PruneHistoryAsync();
         }
     }
 
@@ -85,6 +83,23 @@ sealed class AgentOrangeApp(AgentChatConfig config) : IAsyncDisposable
     {
         if (_session is not null)
             await _session.DisposeAsync();
+    }
+
+    async Task PruneHistoryAsync()
+    {
+        if (_session?.TokenUsageProvider is not { } provider)
+            return;
+
+        var modelInfo = await _session.GetModelInfoAsync();
+        var limit = (modelInfo?.InputTokenLimit ?? 8192) * 0.7;
+
+        while (true)
+        {
+            var usage = await provider.GetTokenUsageAsync(_history);
+            if (usage.TotalTokens <= limit || _history.Count <= 2)
+                break;
+            _history.RemoveAt(1); // System-Prompt bleibt immer erhalten
+        }
     }
 
     async Task InitializeSystemPromptAsync()
