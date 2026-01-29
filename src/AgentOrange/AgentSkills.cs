@@ -1,7 +1,5 @@
-﻿using AgentOrange.Core;
-using Microsoft.Extensions.AI;
+﻿using Microsoft.Extensions.AI;
 using System.ComponentModel;
-using SharpCompress.Archives;
 
 namespace AgentOrange;
 
