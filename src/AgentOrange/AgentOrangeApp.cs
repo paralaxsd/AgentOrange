@@ -1,12 +1,9 @@
 using AgentOrange.ChatSession;
-using AgentOrange.Core.Extensions;
-using AgentOrange.Core.ProcessHandling;
 using AgentOrange.Skills;
 using Microsoft.Extensions.AI;
 using System.ComponentModel;
 using System.Reflection;
-
-// ReSharper disable AccessToDisposedClosure
+using AgentOrange.Core.Extensions;
 
 namespace AgentOrange;
 
@@ -27,9 +24,16 @@ sealed class AgentOrangeApp(AgentChatConfig config) : IAsyncDisposable
      * ***************************************************************************************/
     public async Task RunAsync()
     {
+        await PreconditionChecker.ValidateOrThrowAsync();
         await InitializeSessionAsync();
         await new AgentChatSessionLoop().RunAsync(
             _ui.NotNull(), _session.NotNull(), _history, _chatClient.NotNull());
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_session is { })
+            await _session.DisposeAsync();
     }
 
     async Task InitializeSessionAsync()
@@ -45,25 +49,17 @@ sealed class AgentOrangeApp(AgentChatConfig config) : IAsyncDisposable
             .ConfigureOptions(opts =>
             {
                 opts.AllowMultipleToolCalls = true;
+                // ReSharper disable once AccessToDisposedClosure
                 opts.Tools = [.. CreateToolsFromSkillset(skills)];
             })
             .UseFunctionInvocation()
             .Build();
         skills.ToolEnabledClient = _chatClient;
-        await TestInfrastructureAsync();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_session is { })
-        {
-            await _session.DisposeAsync();
-        }
     }
 
     async Task InitializeSystemPromptAsync()
     {
-        if (_session is null)
+        if (_session is not { })
             throw new InvalidOperationException("Chat session not initialized");
 
         var modelInfo = await _session.GetModelInfoAsync();
@@ -88,24 +84,8 @@ sealed class AgentOrangeApp(AgentChatConfig config) : IAsyncDisposable
         _history.Add(new(ChatRole.System, systemPrompt));
     }
 
-    static async Task TestInfrastructureAsync()
-    {
-        Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.WriteLine("--- 🛠️ Infrastructure Sanity Check ---");
-        var check = await ProcessRunner.LaunchWithAsync("dotnet", "--version");
-        Console.WriteLine($"[1] Dotnet Access: {(check.ExitCode == 0 ? "✅" : "❌")}");
-        if (check.ExitCode == 0)
-            Console.WriteLine($"    Version: {check.GetCombinedOutput().Trim()}");
-        var failCheck = await ProcessRunner.LaunchWithAsync("dotnet", "--gibt-es-nicht");
-        Console.WriteLine($"[2] Error Catching: {(failCheck.ExitCode != 0 ? "✅" : "❌")}");
-        if (failCheck.Lines.Any(l => l.Level == LogLevel.Error))
-            Console.WriteLine("    Stderr captured successfully.");
-        Console.WriteLine("--------------------------------------\n");
-        Console.ResetColor();
-    }
-
     static IEnumerable<AIFunction> CreateToolsFromSkillset(object target)
         => target.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
-            .Where(m => m.GetCustomAttribute<DescriptionAttribute>() != null)
+            .Where(m => m.GetCustomAttribute<DescriptionAttribute>() is { })
             .Select(m => AIFunctionFactory.Create(m, target));
 }
