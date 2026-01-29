@@ -17,8 +17,4 @@
     <PackageReference Include="Spectre.Console" Version="0.54.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Core\ProcessHandling\" />
-  </ItemGroup>
-
 </Project>

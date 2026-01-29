@@ -14,14 +14,10 @@ namespace AgentOrange.Core.ProcessHandling;
 /// Provides the means to execute a process asynchronously and capture its output.
 /// </summary>
 public sealed record ProcessRunner(
-    string FileName,
-    string Arguments = "",
-    int TimeoutMs = Timeout.Infinite,
-    CancellationToken CancellationToken = default,
-    Action<LineOutput>? LineCallback = null,
-    string? WorkingDirectory = null,
-    IReadOnlyDictionary<string, string>? Environment = null,
-    ILogger? Logger = null, bool UseShellExecute = false)
+    string FileName, string Arguments = "", int TimeoutMs = Timeout.Infinite,
+    Action<LineOutput>? LineCallback = null, string? WorkingDirectory = null,
+    IReadOnlyDictionary<string, string>? Environment = null, ILogger? Logger = null, 
+    bool UseShellExecute = false, CancellationToken CancellationToken = default)
 {
     /******************************************************************************************
      * FIELDS
@@ -62,8 +58,8 @@ public sealed record ProcessRunner(
         string? workingDirectory = null, IReadOnlyDictionary<string, string>? environment = null,
         ILogger? logger = null, bool useShellExecute = false, CancellationToken token = default) =>
         new ProcessRunner(
-            fileName, arguments, timeoutMs, token, lineCallback,
-            workingDirectory, environment, logger, useShellExecute)
+            fileName, arguments, timeoutMs, lineCallback, workingDirectory, 
+            environment, logger, useShellExecute, token)
             .RunAsync();
 
     Process CreateProcess()
@@ -200,7 +196,7 @@ public sealed record ProcessRunner(
             var endTime = DateTime.UtcNow;
 
             res = new(FileName, completed, wasTimeout, exitCode,
-                startTime, endTime, _outputLines.ToList());
+                startTime, endTime, _outputLines.ToArray());
 
             OnFinished(res);
         }

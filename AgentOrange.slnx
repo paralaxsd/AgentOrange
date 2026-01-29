@@ -1,8 +1,21 @@
 <Solution>
-  <Folder Name="/.github/">
+  <Folder Name="/00 Solution Items/">
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="build.cmd" />
+    <File Path="build.ps1" />
+    <File Path="build.sh" />
+  </Folder>
+  <Folder Name="/00 Solution Items/.github/">
     <File Path=".github/copilot-instructions.md" />
   </Folder>
-  <Folder Name="/src/">
+  <Folder Name="/00 Solution Items/.github/workflow/">
+    <File Path=".github/workflows/compile.yml" />
+  </Folder>
+  <Folder Name="/01 src/">
     <Project Path="src/AgentOrange/AgentOrange.csproj" />
+  </Folder>
+  <Folder Name="/02 build/">
+    <Project Path="build/AgentOrange.Build.csproj" />
   </Folder>
 </Solution>
