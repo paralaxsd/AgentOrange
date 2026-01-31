@@ -3,7 +3,7 @@ using System.ComponentModel;
 
 namespace AgentOrange.Skills;
 
-sealed partial class AgentSkills(IChatClient baseClient) : IDisposable
+public sealed partial class AgentSkills(IChatClient baseClient) : IDisposable
 {
     /******************************************************************************************
      * FIELDS

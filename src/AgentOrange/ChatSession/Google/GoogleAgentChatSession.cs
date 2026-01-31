@@ -1,0 +1,35 @@
+﻿using AgentOrange.Core.Extensions;
+using AgentOrange.TokenUsage;
+using Google.GenAI;
+using Microsoft.Extensions.AI;
+
+namespace AgentOrange.ChatSession.Google;
+
+sealed class GoogleAgentChatSession(AgentChatConfig config, Client modelClient, 
+    IChatClient chatClient, IAgentTokenUsageProvider usageProvider)
+    : AgentChatSession<Client>(modelClient, chatClient, usageProvider)
+{
+    /******************************************************************************************
+     * FIELDS
+     * ***************************************************************************************/
+    readonly AgentChatConfig _config = config;
+
+    /******************************************************************************************
+     * METHODS
+     * ***************************************************************************************/
+    internal async Task InitializeHistoryAsync(AgentChatConfig config)
+    {
+        var modelInfo = await GetModelInfoAsync();
+        var systemPrompt = Utils.CreateSystemPromptFrom(config, modelInfo);
+
+        this.AddToHistory(ChatRole.System, systemPrompt);
+    }
+
+    public override async Task<ModelInfo?> GetModelInfoAsync()
+    {
+        var model = await ModelClient.Models.GetAsync(_config.ModelName);
+        var displayName = model.DisplayName ?? $"Unknown Google Model <{_config.ModelName}>";
+
+        return new(displayName, model.InputTokenLimit, model.OutputTokenLimit);
+    }
+}

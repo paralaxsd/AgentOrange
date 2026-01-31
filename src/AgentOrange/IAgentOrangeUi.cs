@@ -4,7 +4,8 @@ public interface IAgentOrangeUi
 {
     void WriteWelcome();
     string? ReadUserInput();
-    void WriteResponse(string response);
+    void Write(string text);
+    void WriteLine(string text);
     void WriteError(Exception ex);
     void WriteBlankLine();
 }

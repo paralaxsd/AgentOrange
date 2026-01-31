@@ -1,5 +1,11 @@
 namespace AgentOrange;
 
-enum LlmProvider { Google, OpenAI, Azure, Claude }
+public enum LlmProvider { Google, OpenAI, Azure, Claude, Copilot }
 
-record AgentChatConfig(LlmProvider Provider, string ModelName, string ApiKey);
+public record AgentChatConfig(
+    LlmProvider Provider,
+    string ModelName,
+    string ApiKey,
+    string SystemPrompt,
+    string? CopilotToken = null // Optional: Copilot-specific token
+);

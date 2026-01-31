@@ -16,10 +16,9 @@ sealed class AgentOrangeConsoleUi : IAgentOrangeUi
         return Console.ReadLine();
     }
 
-    public void WriteResponse(string response)
-    {
-        Console.WriteLine(response);
-    }
+    public void Write(string text) => Console.Write(text);
+
+    public void WriteLine(string text) => Console.WriteLine(text);
 
     public void WriteError(Exception ex)
     {

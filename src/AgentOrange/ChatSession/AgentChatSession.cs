@@ -1,32 +1,35 @@
+using AgentOrange.Core.Extensions;
 using AgentOrange.TokenUsage;
 using Microsoft.Extensions.AI;
+using AgentOrange.Skills;
 
 namespace AgentOrange.ChatSession;
 
-public sealed class AgentChatSession(
-    IChatClient chatClient,
-    IAgentTokenUsageProvider tokenUsageProvider,
-    IAsyncDisposable disposable,
-    Func<Task<ModelInfo?>> getModelInfo)
+public abstract class AgentChatSession<TClient>(
+    TClient modelClient, IChatClient chatClient, IAgentTokenUsageProvider tokenUsageProvider)
     : IAgentChatSession
+    where TClient : IAsyncDisposable
 {
-    /******************************************************************************************
-     * FIELDS
-     * ***************************************************************************************/
-    readonly IAsyncDisposable _disposable = disposable;
-    readonly Func<Task<ModelInfo?>> _getModelInfo = getModelInfo;
-
     /******************************************************************************************
      * PROPERTIES
      * ***************************************************************************************/
+    public TClient ModelClient { get; } = modelClient;
     public IChatClient ChatClient { get; } = chatClient;
     public IAgentTokenUsageProvider TokenUsageProvider { get; } = tokenUsageProvider;
+    public AgentSkills Skills { get; } = new(chatClient);
+    public List<ChatMessage> History { get; } = [];
 
     /******************************************************************************************
      * METHODS
      * ***************************************************************************************/
-    public async ValueTask DisposeAsync() => await _disposable.DisposeAsync();
-    public Task<ModelInfo?> GetModelInfoAsync() => _getModelInfo();
+    public abstract Task<ModelInfo?> GetModelInfoAsync();
+
+    public virtual async ValueTask DisposeAsync()
+    {
+        Skills.Dispose();
+        ChatClient.Dispose();
+        await ModelClient.DisposeAsync();
+    }
 }
 
 interface IAgentChatSessionFactory
