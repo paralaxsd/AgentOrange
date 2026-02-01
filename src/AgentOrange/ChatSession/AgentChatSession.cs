@@ -6,7 +6,7 @@ namespace AgentOrange.ChatSession;
 
 public abstract class AgentChatSession<TClient>(
     TClient modelClient, IChatClient chatClient, IAgentTokenUsageProvider tokenUsageProvider, 
-    AgentSkills skills)
+    AgentSkills skills, AgentChatConfig config)
     : IAgentChatSession
     where TClient : IAsyncDisposable
 {
@@ -18,6 +18,7 @@ public abstract class AgentChatSession<TClient>(
     public IAgentTokenUsageProvider TokenUsageProvider { get; } = tokenUsageProvider;
     public AgentSkills Skills { get; } = skills;
     public List<ChatMessage> History { get; } = [];
+    public AgentChatConfig Config { get; } = config;
 
     /******************************************************************************************
      * METHODS
@@ -27,7 +28,14 @@ public abstract class AgentChatSession<TClient>(
     public virtual async ValueTask DisposeAsync()
     {
         Skills.Dispose();
-        ChatClient.Dispose();
+        if(ChatClient is IAsyncDisposable asyncDisposable)
+        {
+            await asyncDisposable.DisposeAsync();
+        }
+        else
+        {
+            ChatClient.Dispose();
+        }
         await ModelClient.DisposeAsync();
     }
 }

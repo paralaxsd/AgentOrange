@@ -6,13 +6,13 @@ using Microsoft.Extensions.AI;
 namespace AgentOrange.ChatSession.Copilot;
 
 sealed class CopilotAgentChatSession(
-    CopilotClient modelClient, IChatClient chatClient, AgentSkills skills)
+    CopilotClient modelClient, IChatClient chatClient, AgentSkills skills, AgentChatConfig config)
     : AgentChatSession<CopilotClient>(
-        modelClient, chatClient, new FallbackTokenUsageProvider(), skills)
+        modelClient, chatClient, new FallbackTokenUsageProvider(), skills, config)
 {
     /******************************************************************************************
      * METHODS
      * ***************************************************************************************/
-    public override Task<ModelInfo?> GetModelInfoAsync() => 
-        Task.FromResult<ModelInfo?>(null);
+    public override Task<ModelInfo?> GetModelInfoAsync() =>
+        ModelClient.FindModelInfoAsync(Config.ModelName);
 }

@@ -10,6 +10,7 @@ public interface IAgentChatSession : IAsyncDisposable
     IAgentTokenUsageProvider TokenUsageProvider { get; }
     AgentSkills Skills { get; }
     List<ChatMessage> History { get; }
+    AgentChatConfig Config { get; }
     Task<ModelInfo?> GetModelInfoAsync();
 }
 

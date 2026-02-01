@@ -34,7 +34,7 @@ sealed class CopilotAgentChatSessionFactory : AgentChatSessionFactoryBase
         });
 
         var chatClient = new CopilotChatClient(session);
-        var chatSession = new CopilotAgentChatSession(client, chatClient, skills);
+        var chatSession = new CopilotAgentChatSession(client, chatClient, skills, config);
         skills.InitializeWith(chatClient, null);
         chatSession.AddToHistory(ChatRole.System, systemPrompt);
         return chatSession;
@@ -42,9 +42,7 @@ sealed class CopilotAgentChatSessionFactory : AgentChatSessionFactoryBase
 
     static async Task<string> CreateSystemPromptAsync(AgentChatConfig config, CopilotClient client)
     {
-        var models = (await client.ListModelsAsync());
-        var thisCopilotModel = models.FirstOrDefault(m => m.Id == config.ModelName);
-        var model = thisCopilotModel.ToModelInfo();
+        var model = await client.FindModelInfoAsync(config.ModelName);
         return Utils.CreateSystemPromptFrom(config, model);
     }
 }
