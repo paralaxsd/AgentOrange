@@ -55,7 +55,7 @@ namespace AgentOrange.Skills
             var results = new List<string>();
             var comparison = StringComparison.OrdinalIgnoreCase;
 
-            var isRegex = false;
+            bool isRegex;
             System.Text.RegularExpressions.Regex? regex = null;
 
             // Try to compile as regex, fallback to plain string if invalid
@@ -116,7 +116,7 @@ namespace AgentOrange.Skills
             [Description("Der Startpfad für den Baum. Standard ist das Projektverzeichnis.")] string rootPath = ".",
             [Description("Gibt an, ob versteckte Ordner wie .git oder bin/obj ignoriert werden sollen.")] bool ignoreBuildFolders = true)
         {
-            var sb = new System.Text.StringBuilder();
+            var sb = new StringBuilder();
             void PrintTree(string path, string indent, bool isLast)
             {
                 var dirInfo = new DirectoryInfo(path);

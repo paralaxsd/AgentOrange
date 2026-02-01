@@ -11,7 +11,7 @@ static class PreconditionChecker
             throw new InvalidOperationException("dotnet CLI is required but not found on this system.");
     }
 
-    public static async Task<PreconditionCheckResult> CheckAsync()
+    static async Task<PreconditionCheckResult> CheckAsync()
     {
         var check = await Core.ProcessHandling.ProcessRunner.LaunchWithAsync("dotnet", "--version");
         var available = check.ExitCode == 0;

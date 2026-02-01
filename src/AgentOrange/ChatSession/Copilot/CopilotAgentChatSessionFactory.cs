@@ -1,29 +1,30 @@
 using AgentOrange.Core.Extensions;
-using GitHub.Copilot.SDK;
+using AgentOrange.Skills;
 using Microsoft.Extensions.AI;
+using GitHub.Copilot.SDK;
 
 namespace AgentOrange.ChatSession.Copilot;
 
-sealed class CopilotAgentChatSessionFactory : IAgentChatSessionFactory
+sealed class CopilotAgentChatSessionFactory : AgentChatSessionFactoryBase
 {
-    public async Task<IAgentChatSession> CreateSessionFromAsync(AgentChatConfig config)
+    public override async Task<IAgentChatSession> CreateSessionFromAsync(AgentChatConfig config)
     {
-        var client = new CopilotClient(new CopilotClientOptions()
-        {
-            AutoStart = true,
-        });
-
+        var skills = new AgentSkills();
+        var client = new CopilotClient(new CopilotClientOptions { AutoStart = true });
         var systemPrompt = await CreateSystemPromptAsync(config, client);
-        
         var session = await client.CreateSessionAsync(new SessionConfig
         {
             Model = config.ModelName,
             Streaming = true,
-            InfiniteSessions = new() // also see: https://github.com/github/copilot-sdk/blob/main/dotnet/README.md#infinite-sessions
+            Tools = CreateToolsFromSkills(skills),
+            // see: https://github.com/github/copilot-sdk/blob/main/dotnet/README.md#infinite-sessions
+            InfiniteSessions = new()
             {
                 Enabled = true,
-                BackgroundCompactionThreshold = 0.80, // Start compacting at 80% context usage
-                BufferExhaustionThreshold = 0.95      // Block at 95% until compaction completes
+                // Start compacting at 80% context usage (see docs for details)
+                BackgroundCompactionThreshold = 0.80,
+                // Block at 95% until compaction completes
+                BufferExhaustionThreshold = 0.95
             },
             SystemMessage = new()
             {
@@ -31,11 +32,11 @@ sealed class CopilotAgentChatSessionFactory : IAgentChatSessionFactory
                 Content = systemPrompt
             }
         });
-        
-        var chatClient = new CopilotChatClient(session);
-        var chatSession = new CopilotAgentChatSession(client, chatClient);
-        chatSession.AddToHistory(ChatRole.System, systemPrompt);
 
+        var chatClient = new CopilotChatClient(session);
+        var chatSession = new CopilotAgentChatSession(client, chatClient, skills);
+        skills.InitializeWith(chatClient, null);
+        chatSession.AddToHistory(ChatRole.System, systemPrompt);
         return chatSession;
     }
 
@@ -44,7 +45,6 @@ sealed class CopilotAgentChatSessionFactory : IAgentChatSessionFactory
         var models = (await client.ListModelsAsync());
         var thisCopilotModel = models.FirstOrDefault(m => m.Id == config.ModelName);
         var model = thisCopilotModel.ToModelInfo();
-        
         return Utils.CreateSystemPromptFrom(config, model);
     }
 }

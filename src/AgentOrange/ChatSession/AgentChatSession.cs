@@ -1,12 +1,12 @@
-using AgentOrange.Core.Extensions;
+using AgentOrange.Skills;
 using AgentOrange.TokenUsage;
 using Microsoft.Extensions.AI;
-using AgentOrange.Skills;
 
 namespace AgentOrange.ChatSession;
 
 public abstract class AgentChatSession<TClient>(
-    TClient modelClient, IChatClient chatClient, IAgentTokenUsageProvider tokenUsageProvider)
+    TClient modelClient, IChatClient chatClient, IAgentTokenUsageProvider tokenUsageProvider, 
+    AgentSkills skills)
     : IAgentChatSession
     where TClient : IAsyncDisposable
 {
@@ -16,7 +16,7 @@ public abstract class AgentChatSession<TClient>(
     public TClient ModelClient { get; } = modelClient;
     public IChatClient ChatClient { get; } = chatClient;
     public IAgentTokenUsageProvider TokenUsageProvider { get; } = tokenUsageProvider;
-    public AgentSkills Skills { get; } = new(chatClient);
+    public AgentSkills Skills { get; } = skills;
     public List<ChatMessage> History { get; } = [];
 
     /******************************************************************************************

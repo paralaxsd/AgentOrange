@@ -1,7 +1,4 @@
 using AgentOrange.ChatSession;
-using Microsoft.Extensions.AI;
-using System.ComponentModel;
-using System.Reflection;
 
 namespace AgentOrange;
 
@@ -13,7 +10,6 @@ sealed class AgentOrangeApp(AgentChatConfig config) : IAsyncDisposable
     readonly AgentChatConfig _config = config;
 
     IAgentChatSession? _session;
-    IChatClient? _chatClient;
 
     /******************************************************************************************
      * METHODS
@@ -37,24 +33,6 @@ sealed class AgentOrangeApp(AgentChatConfig config) : IAsyncDisposable
         var ui = new AgentOrangeConsoleUi();
         _session = await AgentChatSessionFactory.CreateSessionFromAsync(_config);
 
-        var baseClient = _session.ChatClient;
-        var skills = _session.Skills;
-
-        _chatClient = baseClient.AsBuilder()
-            .ConfigureOptions(opts =>
-            {
-                opts.AllowMultipleToolCalls = true;
-                opts.Tools = [.. CreateToolsFromSkillSet(skills)];
-            })
-            .UseFunctionInvocation()
-            .Build();
-        skills.ToolEnabledClient = _chatClient;
-
-        return new(ui, _session, _chatClient);
+        return new(ui, _session);
     }
-    
-    static IEnumerable<AIFunction> CreateToolsFromSkillSet(object target)
-        => target.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
-            .Where(m => m.GetCustomAttribute<DescriptionAttribute>() is { })
-            .Select(m => AIFunctionFactory.Create(m, target));
 }

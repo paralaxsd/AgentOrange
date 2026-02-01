@@ -2,6 +2,7 @@ using GitHub.Copilot.SDK;
 using Microsoft.Extensions.AI;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
+using AgentOrange.Core;
 using AgentOrange.Core.Extensions;
 
 namespace AgentOrange.ChatSession.Copilot;
@@ -22,26 +23,36 @@ sealed class CopilotChatClient(CopilotSession session) : IChatClient, IAsyncDisp
         [EnumeratorCancellation] CancellationToken token = default)
     {
         var channel = Channel.CreateUnbounded<ChatResponseUpdate>();
-        var prompt = messages
-            .Select(m => m.Contents.OfType<TextContent>().FirstOrDefault()?.Text)
-            .ExceptDefault()
-            .LastOrDefault();
+        var prompt = GetUserPromptOrDefaultFrom(messages);
 
         if (prompt is null) { yield break; }
 
-        _ = SendAndHandleStreamingEventsAsync(channel, prompt, token);
+        var scopeTask = Task.FromResult<IDisposable>(NullScope.Instance);
+        try
+        {
+            scopeTask = SendAndHandleStreamingEventsAsync(channel, prompt, token);
 
-        await foreach (var update in channel.Reader.ReadAllAsync(token))
-            yield return update;
+            await foreach (var update in channel.Reader.ReadAllAsync(token))
+                yield return update;
+        }
+        finally
+        {
+            using var _ = await scopeTask;
+        }
     }
-    
+
     public async Task<ChatResponse> GetResponseAsync(
         IEnumerable<ChatMessage> messages,
         ChatOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        var prompt = string.Join("\n", messages.Select(m => m.Contents.OfType<TextContent>().FirstOrDefault()?.Text));
-        var response = await _session.SendAndWaitAsync(new MessageOptions { Prompt = prompt }, cancellationToken: cancellationToken);
+        if(GetUserPromptOrDefaultFrom(messages) is not { } prompt)
+        {
+            prompt = "<no user prompt provided>";
+        }
+
+        var msgOpts = new MessageOptions { Prompt = prompt };
+        var response = await _session.SendAndWaitAsync(msgOpts, cancellationToken: cancellationToken);
         var content = response?.Data.Content ?? string.Empty;
         var message = new ChatMessage(ChatRole.Assistant, content);
         return new ChatResponse(message);
@@ -53,12 +64,14 @@ sealed class CopilotChatClient(CopilotSession session) : IChatClient, IAsyncDisp
 
     public async ValueTask DisposeAsync() => await _session.DisposeAsync();
 
-    async Task SendAndHandleStreamingEventsAsync(
+    async Task<IDisposable> SendAndHandleStreamingEventsAsync(
         Channel<ChatResponseUpdate> channel, string prompt, CancellationToken token)
     {
+        IDisposable res = NullScope.Instance;
+
         try
         {
-            _session.On(evt => OnCopilotEvent(evt, channel.Writer, token));
+            res = _session.On(evt => OnCopilotEvent(evt, channel.Writer, token));
 
             var msgOpts = new MessageOptions { Prompt = prompt };
             await _session.SendAsync(msgOpts, token);
@@ -72,10 +85,12 @@ sealed class CopilotChatClient(CopilotSession session) : IChatClient, IAsyncDisp
             channel.Writer.TryWrite(errorUpdate);
             channel.Writer.TryComplete(ex);
         }
+
+        return res;
     }
 
     static void OnCopilotEvent(
-        object evt, ChannelWriter<ChatResponseUpdate> writer, CancellationToken token)
+        SessionEvent evt, ChannelWriter<ChatResponseUpdate> writer, CancellationToken token)
     {
         if (token.IsCancellationRequested)
         {
@@ -90,15 +105,43 @@ sealed class CopilotChatClient(CopilotSession session) : IChatClient, IAsyncDisp
                 break;
 
             case AssistantMessageDeltaEvent msg:
-                writer.TryWrite(new(ChatRole.Assistant, msg.Data.DeltaContent));
+                //writer.TryWrite(new(ChatRole.Assistant, msg.Data.DeltaContent));
+                writer.TryWrite(new()
+                {
+                    Contents = [new TextContent(msg.Data.DeltaContent)]
+                });
+                break;
+
+            case AssistantReasoningDeltaEvent rdEvt:
+                writer.TryWrite(new()
+                {
+                    Contents = [new TextReasoningContent(rdEvt.Data.DeltaContent)]
+                });
+                break;
+
+            case AssistantReasoningEvent rEvt:
+                writer.TryWrite(new()
+                {
+                    Contents = [new TextReasoningContent(rEvt.Data.Content)]
+                });
+                break;
+
+            case SystemMessageEvent sysMsg:
+                writer.TryWrite(new()
+                {
+                    Contents = [new TextReasoningContent(sysMsg.Data.Content)]
+                });
                 break;
 
             case ToolExecutionStartEvent toolStart:
                 var tsData = toolStart.Data;
-                var args = tsData.Arguments as IDictionary<string, object?>;
+                var callArgs = tsData.Arguments as IDictionary<string, object?>;
+
+                List<AIContent> contents = [new FunctionCallContent(tsData.ToolCallId, tsData.ToolName, callArgs)];
+                TryExtractReasoningContentInto(contents, tsData);
                 writer.TryWrite(new()
                 {
-                    Contents = [new FunctionCallContent(tsData.ToolCallId, tsData.ToolName, args)]
+                    Contents = contents
                 });
                 break;
 
@@ -110,10 +153,10 @@ sealed class CopilotChatClient(CopilotSession session) : IChatClient, IAsyncDisp
                 });
                 break;
 
-            case SessionUsageInfoData uid:
+            case SessionUsageInfoEvent uid:
                 var uidDetails = new UsageDetails()
                 {
-                    TotalTokenCount = (long)uid.CurrentTokens,
+                    TotalTokenCount = (long)uid.Data.CurrentTokens,
                 };
                 writer.TryWrite(new()
                 {
@@ -121,11 +164,11 @@ sealed class CopilotChatClient(CopilotSession session) : IChatClient, IAsyncDisp
                 });
                 break;
 
-            case AssistantUsageData aud:
+            case AssistantUsageEvent aud:
                 var audDetails = new UsageDetails()
                 {
-                    InputTokenCount = (long?)aud.InputTokens,
-                    OutputTokenCount = (long?)aud.OutputTokens,
+                    InputTokenCount = (long?)aud.Data.InputTokens,
+                    OutputTokenCount = (long?)aud.Data.OutputTokens,
                 };
                 writer.TryWrite(new()
                 {
@@ -138,4 +181,27 @@ sealed class CopilotChatClient(CopilotSession session) : IChatClient, IAsyncDisp
                 break;
         }
     }
+
+    static void TryExtractReasoningContentInto(
+        List<AIContent> contents, ToolExecutionStartData tsData)
+    {
+        if (tsData is not
+        {
+            ToolName: "report_intent", Arguments: System.Text.Json.JsonElement jsonEl
+        }) { return; }
+
+        var intent = jsonEl.TryGetProperty("intent", out var intentProp) && 
+            intentProp.ValueKind == System.Text.Json.JsonValueKind.String
+            ? intentProp.GetString() : null;
+        if(intent.HasContent)
+        {
+            contents.Add(new TextReasoningContent(intent));
+        }
+    }
+
+    static string? GetUserPromptOrDefaultFrom(IEnumerable<ChatMessage> messages) =>
+        messages
+            .Select(m => m.Contents.OfType<TextContent>().FirstOrDefault()?.Text)
+            .ExceptDefault()
+            .LastOrDefault();
 }

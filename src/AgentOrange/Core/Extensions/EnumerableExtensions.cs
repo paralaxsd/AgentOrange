@@ -1,4 +1,6 @@
-﻿namespace AgentOrange.Core.Extensions;
+﻿using System.Collections;
+
+namespace AgentOrange.Core.Extensions;
 
 public static class EnumerableExtensions
 {
@@ -10,6 +12,18 @@ public static class EnumerableExtensions
         that.OrEmpty()
             .Where(el => el.HasValue)
             .Select(item => item!.Value);
+
+    extension(IEnumerable elements)
+    {
+        public TDerived? FirstOrDefault<TDerived>() =>
+            elements.OfType<TDerived>().FirstOrDefault();
+
+        public TDerived? FirstOrDefault<TDerived>(Func<TDerived, bool> predicate)
+        {
+            var derivedEls = elements.OfType<TDerived>();
+            return Enumerable.FirstOrDefault(derivedEls, predicate);
+        }
+    }
 
     public static IEnumerable<T> OrEmpty<T>(this IEnumerable<T>? that) => that ?? [];
 

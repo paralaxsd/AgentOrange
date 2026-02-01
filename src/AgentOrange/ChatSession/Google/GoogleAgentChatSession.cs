@@ -1,4 +1,5 @@
 ﻿using AgentOrange.Core.Extensions;
+using AgentOrange.Skills;
 using AgentOrange.TokenUsage;
 using Google.GenAI;
 using Microsoft.Extensions.AI;
@@ -6,8 +7,8 @@ using Microsoft.Extensions.AI;
 namespace AgentOrange.ChatSession.Google;
 
 sealed class GoogleAgentChatSession(AgentChatConfig config, Client modelClient, 
-    IChatClient chatClient, IAgentTokenUsageProvider usageProvider)
-    : AgentChatSession<Client>(modelClient, chatClient, usageProvider)
+    IChatClient chatClient, IAgentTokenUsageProvider usageProvider, AgentSkills skills)
+    : AgentChatSession<Client>(modelClient, chatClient, usageProvider, skills)
 {
     /******************************************************************************************
      * FIELDS

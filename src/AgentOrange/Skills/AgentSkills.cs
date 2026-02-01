@@ -3,17 +3,17 @@ using System.ComponentModel;
 
 namespace AgentOrange.Skills;
 
-public sealed partial class AgentSkills(IChatClient baseClient) : IDisposable
+public sealed partial class AgentSkills : IDisposable
 {
     /******************************************************************************************
      * FIELDS
      * ***************************************************************************************/
-    readonly HttpClient _http = new();
+    IChatClient? _baseClient;
 
     /******************************************************************************************
      * PROPERTIES
      * ***************************************************************************************/
-    public IChatClient? ToolEnabledClient { get; set; }
+    public IChatClient ToolEnabledClient { get; private set; } = default!;
 
     /******************************************************************************************
      * METHODS
@@ -39,18 +39,19 @@ public sealed partial class AgentSkills(IChatClient baseClient) : IDisposable
         [Description("Die Rolle/Aufgabe des Sub-Agenten")] string systemPrompt,
         [Description("Die konkrete Aufgabe")] string prompt)
     {
-        var clientToUse = ToolEnabledClient ?? baseClient;
-
         var internalHistory = new List<ChatMessage>
         {
             new(ChatRole.System, systemPrompt),
             new(ChatRole.User, prompt)
         };
 
-        // Hier nutzen wir den internalClient rekursiv
+        var clientToUse = _baseClient ?? ToolEnabledClient;
         var response = await clientToUse.GetResponseAsync(internalHistory);
         return response.Messages.FirstOrDefault()?.Text ?? "<keine Antwort>";
     }
+
+    public void InitializeWith(IChatClient toolClient, IChatClient? baseClient) => 
+        (ToolEnabledClient, _baseClient) = (toolClient, baseClient);
 
     public void Dispose() => _http.Dispose();
 }

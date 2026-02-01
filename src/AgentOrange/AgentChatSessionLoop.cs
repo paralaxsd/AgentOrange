@@ -7,20 +7,19 @@ using Spectre.Console;
 
 namespace AgentOrange;
 
-sealed class AgentChatSessionLoop(
-    IAgentOrangeUi ui, IAgentChatSession session, IChatClient chatClient)
+sealed class AgentChatSessionLoop(IAgentOrangeUi ui, IAgentChatSession session)
 {
     /******************************************************************************************
      * FIELDS
      * ***************************************************************************************/
     readonly IAgentOrangeUi _ui = ui;
     readonly IAgentChatSession _session = session;
-    readonly IChatClient _chatClient = chatClient;
 
     /******************************************************************************************
      * PROPERTIES
      * ***************************************************************************************/
     List<ChatMessage> History => _session.History;
+    IChatClient ChatClient => _session.Skills.ToolEnabledClient;
 
     /******************************************************************************************
      * METHODS
@@ -88,15 +87,32 @@ sealed class AgentChatSessionLoop(
         {
             try
             {
-                await foreach (var part in _chatClient.GetStreamingResponseAsync(History))
+                await foreach (var part in ChatClient.GetStreamingResponseAsync(History))
                 {
-                    usage = part.Contents.OfType<UsageContent>().FirstOrDefault();
-                    foreach (var c in part.Text)
+                    usage = part.Contents.FirstOrDefault<UsageContent>();
+
+                    if(part.Contents.FirstOrDefault<FunctionCallContent>() is { }  funcCall)
                     {
-                        _ui.Write(c.ToString());
-                        await Task.Delay(2);
+                        AnsiConsole.MarkupLine($"\t[cyan]→ Running: [bold]{funcCall.Name}[/] ({funcCall.CallId})[/]");
                     }
-                    assistantText.Append(part.Text);
+                    if(part.Contents.FirstOrDefault<FunctionResultContent>() is { } funcResult) 
+                    {
+                        AnsiConsole.MarkupLine($"\t[cyan]→ Finished: call {funcResult.CallId}[/]");
+                    }
+                    if (part.Contents.FirstOrDefault<TextReasoningContent>() is { } reasoning)
+                    {
+                        AnsiConsole.MarkupLine($"\t*[yellow]{reasoning.Text}[/]*");
+                    }
+                    
+                    if(part.Text.HasContent)
+                    {
+                        foreach (var c in part.Text)
+                        {
+                            _ui.Write(c.ToString());
+                            await Task.Delay(2);
+                        }
+                        assistantText.Append(part.Text);
+                    }
                 }
                 return (assistantText.ToString(), usage);
             }
