@@ -1,4 +1,4 @@
-namespace AgentOrange;
+namespace AgentOrange.Console;
 
 sealed record PreconditionCheckResult(bool DotnetAvailable, string? DotnetVersion);
 

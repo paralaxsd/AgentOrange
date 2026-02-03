@@ -1,4 +1,4 @@
-﻿namespace AgentOrange;
+﻿namespace AgentOrange.Console;
 
 static class Constants
 {

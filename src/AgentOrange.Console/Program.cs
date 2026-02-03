@@ -1,7 +1,7 @@
 ﻿using AgentOrange.Core;
 using AgentOrange.Core.Extensions;
 
-namespace AgentOrange;
+namespace AgentOrange.Console;
 
 static class Program
 {
@@ -28,7 +28,7 @@ static class Program
         {
             if(provider is LlmProvider.Google)
             {
-                Console.WriteLine("GEMINI_API_KEY fehlt.");
+                System.Console.WriteLine("GEMINI_API_KEY fehlt.");
                 return null;
             }
             apiKey = "fake";

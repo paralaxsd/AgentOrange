@@ -1,10 +1,10 @@
+using System.Text;
 using AgentOrange.Core.ChatSession;
 using AgentOrange.Core.Extensions;
 using Microsoft.Extensions.AI;
 using Spectre.Console;
-using System.Text;
 
-namespace AgentOrange;
+namespace AgentOrange.Console;
 
 sealed class AgentChatSessionLoop(IAgentOrangeUi ui, IAgentChatSession session)
 {

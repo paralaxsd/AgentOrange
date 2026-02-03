@@ -363,4 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # Application specific ignores
-src/AgentOrange/Properties/launchSettings.json
+src/AgentOrange.Console/Properties/launchSettings.json

@@ -1,4 +1,4 @@
-namespace AgentOrange;
+namespace AgentOrange.Console;
 
 public interface IAgentOrangeUi
 {

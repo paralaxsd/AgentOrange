@@ -1,7 +1,7 @@
 using AgentOrange.Core;
 using AgentOrange.Core.ChatSession;
 
-namespace AgentOrange;
+namespace AgentOrange.Console;
 
 sealed class AgentOrangeApp(AgentChatConfig config) : IAsyncDisposable
 {
