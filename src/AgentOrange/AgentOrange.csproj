@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="GitHub.Copilot.SDK" Version="0.1.20" />
-    <PackageReference Include="Google.GenAI" Version="0.13.1" />
+    <PackageReference Include="Google.GenAI" Version="0.14.0" />
     <PackageReference Include="Microsoft.Extensions.AI" Version="10.2.0" />
     <PackageReference Include="SharpCompress" Version="0.44.5" />
     <PackageReference Include="Wasmtime" Version="34.0.2" />
