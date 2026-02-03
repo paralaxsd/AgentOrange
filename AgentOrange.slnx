@@ -14,6 +14,7 @@
     <File Path=".github/workflows/compile.yml" />
   </Folder>
   <Folder Name="/01 src/">
+    <Project Path="src/AgentOrange.Core/AgentOrange.Core.csproj" />
     <Project Path="src/AgentOrange/AgentOrange.csproj" />
   </Folder>
   <Folder Name="/02 build/">

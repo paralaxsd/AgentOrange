@@ -1,4 +1,5 @@
-using AgentOrange.ChatSession;
+using AgentOrange.Core;
+using AgentOrange.Core.ChatSession;
 
 namespace AgentOrange;
 

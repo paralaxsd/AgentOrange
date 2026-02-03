@@ -1,4 +1,5 @@
-﻿using AgentOrange.Core.Extensions;
+﻿using AgentOrange.Core;
+using AgentOrange.Core.Extensions;
 
 namespace AgentOrange;
 

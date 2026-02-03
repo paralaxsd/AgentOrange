@@ -1,9 +1,8 @@
-using AgentOrange.ChatSession;
+using AgentOrange.Core.ChatSession;
 using AgentOrange.Core.Extensions;
-using AgentOrange.TokenUsage;
 using Microsoft.Extensions.AI;
-using System.Text;
 using Spectre.Console;
+using System.Text;
 
 namespace AgentOrange;
 
@@ -61,7 +60,7 @@ sealed class AgentChatSessionLoop(IAgentOrangeUi ui, IAgentChatSession session)
         var timestamp = DateTime.Now.ToString("yyyy - MM - dd HH:mm(ddd)");
         var metaSeg = $"META: {timestamp}";
         var usage = _session.TokenUsageProvider is { } provider ?
-            await provider.GetTokenUsageAsync(History, input) : TokenUsageInfo.Empty;
+            await provider.GetTokenUsageAsync(History, input) : Core.TokenUsage.TokenUsageInfo.Empty;
         var inputTokens = usage.InputTokens is { } inCount ? $"In: {inCount}" : null;
         var outputTokens = usage.OutputTokens is { } outCount ? $"Out: {outCount}" : null;
         var totalTokens = usage.TotalTokens is { } tokenCount ? $"Total: {tokenCount}" : null;
@@ -89,22 +88,18 @@ sealed class AgentChatSessionLoop(IAgentOrangeUi ui, IAgentChatSession session)
             {
                 await foreach (var part in ChatClient.GetStreamingResponseAsync(History))
                 {
-                    usage = part.Contents.FirstOrDefault<UsageContent>();
+                    usage = part.Contents.OfType<UsageContent>().FirstOrDefault();
 
-                    if(part.Contents.FirstOrDefault<FunctionCallContent>() is { }  funcCall)
-                    {
+                    if (part.Contents.OfType<FunctionCallContent>().FirstOrDefault() is { } funcCall)
                         AnsiConsole.MarkupLine($"\t[cyan]→ Running: [bold]{funcCall.Name}[/] ({funcCall.CallId})[/]");
-                    }
-                    if(part.Contents.FirstOrDefault<FunctionResultContent>() is { } funcResult) 
-                    {
+
+                    if (part.Contents.OfType<FunctionResultContent>().FirstOrDefault() is { } funcResult)
                         AnsiConsole.MarkupLine($"\t[cyan]→ Finished: call {funcResult.CallId}[/]");
-                    }
-                    if (part.Contents.FirstOrDefault<TextReasoningContent>() is { } reasoning)
-                    {
+
+                    if (part.Contents.OfType<TextReasoningContent>().FirstOrDefault() is { } reasoning)
                         AnsiConsole.MarkupLine($"\t*[yellow]{reasoning.Text}[/]*");
-                    }
-                    
-                    if(part.Text.HasContent)
+
+                    if (part.Text.HasContent)
                     {
                         foreach (var c in part.Text)
                         {
@@ -132,10 +127,9 @@ sealed class AgentChatSessionLoop(IAgentOrangeUi ui, IAgentChatSession session)
 
     static ChatMessage CreateChatMessageFrom(string response, UsageContent? usage)
     {
-        IList<AIContent> content = [new TextContent(response)];
+        var content = new List<AIContent> { new TextContent(response) };
         if (usage is { })
             content.Add(usage);
-
-        return new(ChatRole.Assistant, content);
+        return new ChatMessage(ChatRole.Assistant, content);
     }
 }

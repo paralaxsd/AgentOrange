@@ -1,5 +1,3 @@
-using System;
-
 namespace AgentOrange;
 
 sealed class AgentOrangeConsoleUi : IAgentOrangeUi
