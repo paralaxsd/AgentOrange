@@ -5,7 +5,7 @@ using Microsoft.Extensions.AI;
 
 namespace AgentOrange.Core.ChatSession;
 
-abstract class AgentChatSessionFactoryBase : IAgentChatSessionFactory
+public abstract class AgentChatSessionFactoryBase : IAgentChatSessionFactory
 {
     protected static AIFunction[] CreateToolsFromSkills(AgentSkills skills)
         => [.. CreateToolsFromSkillSet(skills)];

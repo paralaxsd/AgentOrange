@@ -1,6 +1,14 @@
-@inject IChatClient ChatClient
 
-@if (suggestions is not null)
+@using AgentOrange.Core.ChatSession
+@using Microsoft.Extensions.AI
+
+@if (Session is null || ChatClient is null)
+{
+    <div class="page-width suggestions">
+        <span>Loading suggestions...</span>
+    </div>
+}
+else if (suggestions is not null)
 {
     <div class="page-width suggestions">
         @foreach (var suggestion in suggestions)
@@ -13,6 +21,9 @@
 }
 
 @code {
+    [CascadingParameter] public IAgentChatSession? Session { get; set; }
+    public IChatClient? ChatClient => Session?.ChatClient;
+
     private static string Prompt = @"
         Suggest up to 3 follow-up questions that I could ask you to help me complete my task.
         Each suggestion must be a complete sentence, maximum 6 words.
@@ -41,6 +52,9 @@
 
     private async Task UpdateSuggestionsAsync(IReadOnlyList<ChatMessage> messages)
     {
+        if (ChatClient is null)
+            return;
+
         cancellation?.Cancel();
         cancellation = new CancellationTokenSource();
 

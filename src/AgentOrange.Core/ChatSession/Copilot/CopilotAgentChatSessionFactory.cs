@@ -5,12 +5,13 @@ using Microsoft.Extensions.AI;
 
 namespace AgentOrange.Core.ChatSession.Copilot;
 
-sealed class CopilotAgentChatSessionFactory : AgentChatSessionFactoryBase
+public sealed class CopilotAgentChatSessionFactory : AgentChatSessionFactoryBase
 {
     public override async Task<IAgentChatSession> CreateSessionFromAsync(AgentChatConfig config)
     {
         var skills = new AgentSkills();
         var client = new CopilotClient(new CopilotClientOptions { AutoStart = true });
+        await client.StartAsync();
         var systemPrompt = await CreateSystemPromptAsync(config, client);
         var session = await client.CreateSessionAsync(new SessionConfig
         {

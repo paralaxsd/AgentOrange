@@ -5,7 +5,7 @@ using Microsoft.Extensions.AI;
 
 namespace AgentOrange.Core.ChatSession.Google;
 
-sealed class GoogleAgentChatSessionFactory : AgentChatSessionFactoryBase
+public sealed class GoogleAgentChatSessionFactory : AgentChatSessionFactoryBase
 {
     /******************************************************************************************
      * METHODS
