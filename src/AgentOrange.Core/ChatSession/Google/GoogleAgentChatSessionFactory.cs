@@ -21,7 +21,7 @@ public sealed class GoogleAgentChatSessionFactory : AgentChatSessionFactoryBase
 
         // Tools/Skills nachträglich am Client registrieren
         var toolEnabledClient = CreateToolConsumingClientFrom(chatClient, skills);
-        skills.InitializeWith(toolEnabledClient, chatClient);
+        skills.InitializeWith(toolEnabledClient, () => Task.FromResult(CreateToolConsumingClientFrom(chatClient, skills)));
 
         return session;
     }

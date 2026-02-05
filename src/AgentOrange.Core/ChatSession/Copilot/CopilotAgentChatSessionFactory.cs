@@ -36,7 +36,16 @@ public sealed class CopilotAgentChatSessionFactory : AgentChatSessionFactoryBase
 
         var chatClient = new CopilotChatClient(session);
         var chatSession = new CopilotAgentChatSession(client, chatClient, skills, config);
-        skills.InitializeWith(chatClient, null);
+        skills.InitializeWith(chatClient, async () =>
+        {
+            var subSession = await client.CreateSessionAsync(new SessionConfig
+            {
+                Model = config.ModelName,
+                Streaming = false,
+                Tools = CreateToolsFromSkills(skills)
+            });
+            return new CopilotChatClient(subSession);
+        });
         chatSession.AddToHistory(ChatRole.System, systemPrompt);
         return chatSession;
     }

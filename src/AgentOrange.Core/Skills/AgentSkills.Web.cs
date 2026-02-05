@@ -33,8 +33,6 @@ sealed partial class AgentSkills
             new(ChatRole.User, $"Hier ist der Content von {url}:\n\n{rawContent}")
         };
 
-        var client = _baseClient ?? ToolEnabledClient;
-        var response = await client.GetResponseAsync(internalHistory);
-        return response.Messages.FirstOrDefault()?.Text ?? "<keine Zusammenfassung>";
+        return await SendToSubcontractorAsync(internalHistory);
     }
 }
