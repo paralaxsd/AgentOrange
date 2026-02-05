@@ -101,18 +101,23 @@ public sealed partial class AgentSkills : IDisposable
     {
         try
         {
+            IChatClient client;
+            IAsyncDisposable? disposable;
+
             if (_createSubcontractClient is { } factory)
             {
-                var client = await factory();
-                await using (client as IAsyncDisposable)
-                {
-                    var response = await client.GetResponseAsync(messages);
-                    return response.Messages.FirstOrDefault()?.Text ?? "<keine Antwort>";
-                }
+                client = await factory();
+                disposable = client as IAsyncDisposable;
             }
             else
             {
-                var response = await ToolEnabledClient.GetResponseAsync(messages);
+                client = ToolEnabledClient;
+                disposable = null;
+            }
+
+            await using (disposable)
+            {
+                var response = await client.GetResponseAsync(messages);
                 return response.Messages.FirstOrDefault()?.Text ?? "<keine Antwort>";
             }
         }
