@@ -36,7 +36,7 @@ public sealed class ResourceDisposer(ILogger<ResourceDisposer> logger) : IAsyncD
     {
         try
         {
-            await _semaphore.WaitAsync();
+            await _semaphore.WaitAsync().ConfigureAwait(false);
             await func();
         }
         finally
@@ -53,7 +53,9 @@ public sealed class ResourceDisposer(ILogger<ResourceDisposer> logger) : IAsyncD
         }
         else
         {
-            _logger.LogWarning("Unable to dispose not previously registered resource");
+            _logger.LogWarning(
+                "Unable to dispose unregistered resource {ResourceType}",
+                knownResource.GetType().Name);
         }
     }
 }
