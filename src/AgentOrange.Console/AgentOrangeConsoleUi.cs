@@ -11,7 +11,44 @@ sealed class AgentOrangeConsoleUi : IAgentOrangeUi
     public string? ReadUserInput()
     {
         System.Console.Write("> ");
-        return System.Console.ReadLine();
+
+        var lines = new List<string>();
+        var currentLine = "";
+
+        while (true)
+        {
+            var key = System.Console.ReadKey(intercept: true);
+
+            switch (key.Key)
+            {
+                case ConsoleKey.Enter
+                    when (key.Modifiers & ConsoleModifiers.Shift) != 0
+                         || System.Console.KeyAvailable:
+                    lines.Add(currentLine);
+                    currentLine = "";
+                    System.Console.WriteLine();
+                    System.Console.Write("  ");
+                    break;
+
+                case ConsoleKey.Enter:
+                    lines.Add(currentLine);
+                    System.Console.WriteLine();
+                    return string.Join(Environment.NewLine, lines);
+
+                case ConsoleKey.Backspace when currentLine.Length > 0:
+                    currentLine = currentLine[..^1];
+                    System.Console.Write("\b \b");
+                    break;
+
+                default:
+                    if (!char.IsControl(key.KeyChar))
+                    {
+                        currentLine += key.KeyChar;
+                        System.Console.Write(key.KeyChar);
+                    }
+                    break;
+            }
+        }
     }
 
     public void Write(string text) => System.Console.Write(text);
