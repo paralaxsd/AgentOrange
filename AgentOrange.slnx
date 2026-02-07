@@ -5,6 +5,7 @@
     <File Path="build.cmd" />
     <File Path="build.ps1" />
     <File Path="build.sh" />
+    <File Path="CLAUDE.md" />
     <File Path="README.md" />
   </Folder>
   <Folder Name="/00 Solution Items/.github/">
