@@ -1,0 +1,29 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Core dependencies -->
+    <PackageVersion Include="GitHub.Copilot.SDK" Version="0.1.23" />
+    <PackageVersion Include="Google.GenAI" Version="0.15.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="5.0.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.2.0" />
+    <PackageVersion Include="Spectre.Console" Version="0.54.0" />
+    <!-- Console dependencies -->
+    <PackageVersion Include="SharpCompress" Version="0.44.5" />
+    <PackageVersion Include="Wasmtime" Version="34.0.2" />
+    <!-- Web dependencies -->
+    <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.2.0-preview.1.26063.2" />
+    <PackageVersion Include="Microsoft.Extensions.DataIngestion" Version="10.2.0-preview.1.26063.2" />
+    <PackageVersion Include="Microsoft.Extensions.DataIngestion.Markdig" Version="10.2.0-preview.1.26063.2" />
+    <PackageVersion Include="PdfPig" Version="0.1.13" />
+    <PackageVersion Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" Version="2.0.0" />
+    <PackageVersion Include="Microsoft.ML.Tokenizers.Data.O200kBase" Version="2.0.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.SqliteVec" Version="1.67.1-preview" />
+    <!-- Build tooling -->
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.102" />
+    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.9.50" />
+    <PackageVersion Include="Nuke.Common" Version="10.1.0" />
+  </ItemGroup>
+</Project>

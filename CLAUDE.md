@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build & Run
 
-This is a **.NET 10** solution using the [Nuke](https://nuke.build/) build system.
+This is a **.NET 10** solution using:
+- **[Nuke](https://nuke.build/)** build system
+- **Central Package Management** (Directory.Packages.props)
+- **Directory.Build.props** for common project properties
+- **[Nerdbank.GitVersioning](https://github.com/dotnet/Nerdbank.GitVersioning)** for automatic versioning
 
 ```bash
 # Build (default target is Compile, which depends on Restore)
@@ -14,7 +18,12 @@ nuke Clean     # Cleans bin/obj directories
 
 # NuGet packaging
 nuke PackNuget      # Packs AgentOrange.Core as NuGet package (output: artifacts/)
-nuke PublishNuget   # Publishes to GitHub Packages (requires NuGetApiKey parameter)
+nuke PublishNuget   # Publishes to GitHub Packages (requires GitHubToken parameter)
+
+# Versioning & Tagging
+nbgv get-version    # Show current calculated version
+nbgv tag            # Create a version tag (e.g., v1.0.0)
+nbgv tag --what-if  # Preview tag name without creating it
 
 # Run console app
 dotnet run --project src/AgentOrange.Console/AgentOrange.Console.csproj
@@ -28,10 +37,23 @@ There is no test project yet.
 ### NuGet Publishing
 
 The Core library is packaged as a NuGet package with:
-- Source Link support for debugging into library code
-- Symbol package (.snupkg) with embedded sources
-- Automatic publishing to GitHub Packages on tag push (`v*`)
-- GitHub Actions workflow: `.github/workflows/publish_nuget.yml`
+- **Automatic versioning** via Nerdbank.GitVersioning (version.json)
+- **Source Link** support for debugging into library code
+- **Symbol package** (.snupkg) with embedded sources
+- **Automatic publishing** to GitHub Packages on tag push (`v*`)
+- **GitHub Actions workflow**: `.github/workflows/publish_nuget.yml`
+
+To publish a new version:
+```bash
+nbgv tag        # Creates version tag (e.g., v1.0.0)
+git push origin v1.0.0  # Triggers GitHub Actions to build and publish
+```
+
+### Project Structure
+
+- **Directory.Build.props** — Common properties inherited by all projects (TargetFramework, Nullable, Source Link, etc.)
+- **Directory.Packages.props** — Central Package Management (all package versions in one place)
+- **version.json** — Nerdbank.GitVersioning configuration (semantic versioning from Git)
 
 ## Architecture
 
