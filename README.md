@@ -1,4 +1,4 @@
-# AgentOrange
+# AgentOrange [![compile](https://github.com/paralaxsd/AgentOrange/actions/workflows/compile.yml/badge.svg)](https://github.com/paralaxsd/AgentOrange/actions/workflows/compile.yml)
 
 **AgentOrange** is a modern, modular LLM agent for .NET 10, designed with a focus on clean code, portability, and extensibility.
 
