@@ -97,10 +97,11 @@ sealed class Build : NukeBuild
     Target PublishNuget => _ => _
         .Description("Publishes the NuGet package to the configured NuGet source.")
         .DependsOn(PackNuget)
-        .Requires(() => GitHubToken ?? NuGetApiKey)
         .Executes(() =>
         {
             var apiKey = GitHubToken ?? NuGetApiKey;
+            Assert.True(!string.IsNullOrEmpty(apiKey), "Either GitHubToken or NuGetApiKey must be provided");
+
             DotNetNuGetPush(s => s
                 .SetTargetPath(ArtifactsDirectory / "*.nupkg")
                 .SetSource(NuGetSource)
