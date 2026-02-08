@@ -91,13 +91,13 @@ sealed class AgentChatSessionLoop(IAgentOrangeUi ui, IAgentChatSession session)
                     usage = part.Contents.OfType<UsageContent>().FirstOrDefault();
 
                     if (part.Contents.OfType<FunctionCallContent>().FirstOrDefault() is { } funcCall)
-                        AnsiConsole.MarkupLine($"\t[cyan]→ Running: [bold]{funcCall.Name}[/] ({funcCall.CallId})[/]");
+                        AnsiConsole.MarkupLine($"\t[cyan]→ Running: [bold]{Markup.Escape(funcCall.Name)}[/] ({Markup.Escape(funcCall.CallId)})[/]");
 
                     if (part.Contents.OfType<FunctionResultContent>().FirstOrDefault() is { } funcResult)
-                        AnsiConsole.MarkupLine($"\t[cyan]→ Finished: call {funcResult.CallId}[/]");
+                        AnsiConsole.MarkupLine($"\t[cyan]→ Finished: call {Markup.Escape(funcResult.CallId)}[/]");
 
                     if (part.Contents.OfType<TextReasoningContent>().FirstOrDefault() is { } reasoning)
-                        AnsiConsole.MarkupLine($"\t*[yellow]{reasoning.Text}[/]*");
+                        AnsiConsole.MarkupLine($"\t*[yellow]{Markup.Escape(reasoning.Text)}[/]*");
 
                     if (part.Text.HasContent)
                     {
@@ -118,7 +118,7 @@ sealed class AgentChatSessionLoop(IAgentOrangeUi ui, IAgentChatSession session)
             }
             catch (Exception ex)
             {
-                AnsiConsole.MarkupLine($"[bold red]Error while streaming:[/] [red]{ex.Message}[/]");
+                AnsiConsole.MarkupLine($"[bold red]Error while streaming:[/] [red]{Markup.Escape(ex.Message)}[/]");
                 break;
             }
         }
