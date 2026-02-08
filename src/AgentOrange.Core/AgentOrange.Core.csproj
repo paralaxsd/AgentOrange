@@ -4,7 +4,31 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <!-- NuGet Package Metadata -->
+    <PackageId>AgentOrange.Core</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>paralaxsd</Authors>
+    <Company>paralaxsd</Company>
+    <Description>A modern, modular LLM agent framework for .NET 10 with provider-agnostic architecture. Currently Supports Google Geminiand GitHub Copilot. Features include token-based history pruning, modular skills system, sub-agent delegation, and clean separation of concerns.</Description>
+    <PackageTags>llm;ai;agent;gemini;copilot;chat;openai;azure;claude;dotnet</PackageTags>
+    <PackageProjectUrl>https://github.com/paralaxsd/AgentOrange</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/paralaxsd/AgentOrange</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+
+    <!-- Source Link Support -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="GitHub.Copilot.SDK" Version="0.1.20" />
@@ -12,6 +36,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="5.0.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.AI" Version="10.2.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     <PackageReference Include="Spectre.Console" Version="0.54.0" />
   </ItemGroup>
 

@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 # Application specific ignores
 src/AgentOrange.Console/Properties/launchSettings.json
+
+# Claude Code local settings (but keep agents/ and agent-memory/)
+.claude/settings.local.json

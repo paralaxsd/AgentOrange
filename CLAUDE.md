@@ -12,6 +12,10 @@ nuke
 nuke Compile
 nuke Clean     # Cleans bin/obj directories
 
+# NuGet packaging
+nuke PackNuget      # Packs AgentOrange.Core as NuGet package (output: artifacts/)
+nuke PublishNuget   # Publishes to GitHub Packages (requires NuGetApiKey parameter)
+
 # Run console app
 dotnet run --project src/AgentOrange.Console/AgentOrange.Console.csproj
 
@@ -20,6 +24,14 @@ dotnet run --project src/AgentOrange.Web/AgentOrange.Web.csproj
 ```
 
 There is no test project yet.
+
+### NuGet Publishing
+
+The Core library is packaged as a NuGet package with:
+- Source Link support for debugging into library code
+- Symbol package (.snupkg) with embedded sources
+- Automatic publishing to GitHub Packages on tag push (`v*`)
+- GitHub Actions workflow: `.github/workflows/publish_nuget.yml`
 
 ## Architecture
 

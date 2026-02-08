@@ -26,6 +26,8 @@
       "enum": [
         "Clean",
         "Compile",
+        "PackNuget",
+        "PublishNuget",
         "Restore"
       ]
     },
@@ -310,6 +312,18 @@
             "Debug",
             "Release"
           ]
+        },
+        "GitHubToken": {
+          "type": "string",
+          "description": "GitHub Token (automatically provided in GitHub Actions)"
+        },
+        "NuGetApiKey": {
+          "type": "string",
+          "description": "NuGet API Key for authentication"
+        },
+        "NuGetSource": {
+          "type": "string",
+          "description": "NuGet Source URL"
         },
         "Solution": {
           "description": "Solution file to build",

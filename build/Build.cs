@@ -6,12 +6,20 @@ using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Utilities.Collections;
 using System.ComponentModel;
 using System.Linq;
+using static Nuke.Common.Tools.DotNet.DotNetTasks;
 // ReSharper disable UnusedMember.Local
 // ReSharper disable AllUnderscoreLocalParameterName
 
 [GitHubActions(
     "compile", GitHubActionsImage.UbuntuLatest,
     OnPushBranches = ["**"], InvokedTargets = [nameof(Compile)], ImportSecrets = [],
+    Progress = true, FetchDepth = 0
+)]
+[GitHubActions(
+    "publish_nuget", GitHubActionsImage.UbuntuLatest,
+    OnPushTags = ["v*"], InvokedTargets = [nameof(PublishNuget)],
+    ImportSecrets = [],
+    EnableGitHubToken = true,
     Progress = true, FetchDepth = 0
 )]
 sealed class Build : NukeBuild
@@ -26,6 +34,18 @@ sealed class Build : NukeBuild
     [Parameter("Solution file to build")]
     [Description("Solution file to build")]
     readonly Solution Solution = RootDirectory.GlobFiles("*.slnx").First().ReadSolution();
+
+    [Parameter("NuGet API Key for authentication")]
+    [Description("NuGet API Key (use GitHub Token for GitHub Packages)")]
+    readonly string NuGetApiKey;
+
+    [Parameter("GitHub Token (automatically provided in GitHub Actions)")]
+    [Description("GitHub Token for GitHub Packages authentication")]
+    readonly string GitHubToken;
+
+    [Parameter("NuGet Source URL")]
+    [Description("NuGet Source URL. Default: GitHub Packages")]
+    readonly string NuGetSource = "https://nuget.pkg.github.com/paralaxsd/index.json";
 
     /******************************************************************************************
      * PROPERTIES
@@ -60,7 +80,36 @@ sealed class Build : NukeBuild
                 .EnableNoRestore());
         });
 
+    [Description("Packs the AgentOrange.Core library as a NuGet package.")]
+    Target PackNuget => _ => _
+        .Description("Packs the AgentOrange.Core library as a NuGet package.")
+        .DependsOn(Restore)
+        .Executes(() =>
+        {
+            DotNetPack(s => s
+                .SetProject(SourceDirectory / "AgentOrange.Core" / "AgentOrange.Core.csproj")
+                .SetConfiguration(Configuration.Release)
+                .SetOutputDirectory(ArtifactsDirectory)
+                .EnableNoRestore());
+        });
+
+    [Description("Publishes the NuGet package to the configured NuGet source.")]
+    Target PublishNuget => _ => _
+        .Description("Publishes the NuGet package to the configured NuGet source.")
+        .DependsOn(PackNuget)
+        .Requires(() => GitHubToken ?? NuGetApiKey)
+        .Executes(() =>
+        {
+            var apiKey = GitHubToken ?? NuGetApiKey;
+            DotNetNuGetPush(s => s
+                .SetTargetPath(ArtifactsDirectory / "*.nupkg")
+                .SetSource(NuGetSource)
+                .SetApiKey(apiKey)
+                .EnableSkipDuplicate());
+        });
+
     AbsolutePath SourceDirectory => RootDirectory / "src";
+    AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
 
     /******************************************************************************************
      * METHODS
