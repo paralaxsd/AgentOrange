@@ -20,6 +20,7 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
     OnPushTags = ["v*"], InvokedTargets = [nameof(PublishNuget)],
     ImportSecrets = [],
     EnableGitHubToken = true,
+    WritePermissions = [GitHubActionsPermissions.Packages],
     Progress = true, FetchDepth = 0
 )]
 sealed class Build : NukeBuild
